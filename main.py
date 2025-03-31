@@ -16,13 +16,14 @@ def get_tasks():
     return response['tasks']
 
 
-def create_task():
-    task_name = new_task_name_entry.get()
-    new_task_name_entry.delete(0, tk.END)
+def create_task(create_task_name_entry):
+    task_name = create_task_name_entry.get()
+    create_task_name_entry.delete(0, tk.END)
     url = f'http://{API_HOST}:{API_PORT}/todos'
     task = {'name': task_name}
     response = requests.post(url, json=task)
     populate_tasks_treeview()
+
 
 def update_task():
     task_id = int(update_task_id_entry.get())
@@ -33,6 +34,7 @@ def update_task():
     task_data = {'name': new_task_name}
     response = requests.put(url, json=task_data)
     populate_tasks_treeview()
+
 
 def delete_task():
     task_id = int(delete_task_id_entry.get())
@@ -53,6 +55,27 @@ def populate_tasks_treeview():
         tasks_treeview.insert('', tk.END, values=(task_id, task_name))
 
 
+def create_task_section(parent):
+    create_task_frame = tk.Frame(parent)
+    create_task_frame.pack()
+
+    create_task_title = tk.Label(create_task_frame, text='Create task')
+    create_task_title.grid(row=0, column=0, columnspan=2)
+
+    create_task_name_label = tk.Label(create_task_frame, text='New task name:')
+    create_task_name_label.grid(row=1, column=0)
+
+    create_task_name_entry = tk.Entry(create_task_frame)
+    create_task_name_entry.grid(row=1, column=1)
+
+    create_task_btn = tk.Button(
+        create_task_frame,
+        text='Create task',
+        command=lambda : create_task(create_task_name_entry)
+    )
+    create_task_btn.grid(row=2, column=0, columnspan=2)
+
+
 window = tk.Tk()
 window.title('TODO')
 
@@ -65,20 +88,7 @@ tasks_treeview.heading('task', text='task')
 tasks_treeview.pack()
 populate_tasks_treeview()
 
-create_task_frame = tk.Frame()
-create_task_frame.pack()
-
-create_task_title = tk.Label(create_task_frame, text='Create task')
-create_task_title.grid(row=0, column=0, columnspan=2)
-
-new_task_name_label = tk.Label(create_task_frame, text='New task name:')
-new_task_name_label.grid(row=1, column=0)
-
-new_task_name_entry = tk.Entry(create_task_frame)
-new_task_name_entry.grid(row=1, column=1)
-
-create_task_btn = tk.Button(create_task_frame, text='Create task', command=create_task)
-create_task_btn.grid(row=2, column=0, columnspan=2)
+create_task_section(window)
 
 update_task_frame = tk.Frame()
 update_task_frame.pack()
