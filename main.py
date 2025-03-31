@@ -34,6 +34,13 @@ def update_task():
     response = requests.put(url, json=task_data)
     populate_tasks_treeview()
 
+def delete_task():
+    task_id = int(delete_task_id_entry.get())
+    delete_task_id_entry.delete(0, tk.END)
+    url = f'http://{API_HOST}:{API_PORT}/todos/{task_id}'
+    response = requests.delete(url)
+    populate_tasks_treeview()
+
 
 def populate_tasks_treeview():
     tasks = get_tasks()
@@ -93,5 +100,20 @@ update_task_name_entry.grid(row=2, column=1)
 
 update_task_btn = tk.Button(update_task_frame, text='Update task', command=update_task)
 update_task_btn.grid(row=3, column=0, columnspan=2)
+
+delete_task_frame = tk.Frame()
+delete_task_frame.pack()
+
+delete_task_title = tk.Label(delete_task_frame, text='Delete task')
+delete_task_title.grid(row=0, column=0, columnspan=2)
+
+delete_task_id_label = tk.Label(delete_task_frame, text='Id of the task to delete')
+delete_task_id_label.grid(row=1, column=0)
+
+delete_task_id_entry = tk.Entry(delete_task_frame)
+delete_task_id_entry.grid(row=1, column=1)
+
+delete_task_btn = tk.Button(delete_task_frame, text='Delete task', command=delete_task)
+delete_task_btn.grid(row=2, column=0, columnspan=2)
 
 window.mainloop()
