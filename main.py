@@ -25,7 +25,7 @@ def create_task(create_task_name_entry):
     populate_tasks_treeview()
 
 
-def update_task():
+def update_task(update_task_id_entry, update_task_name_entry):
     task_id = int(update_task_id_entry.get())
     new_task_name = update_task_name_entry.get()
     update_task_id_entry.delete(0, tk.END)
@@ -76,6 +76,33 @@ def create_task_section(parent):
     create_task_btn.grid(row=2, column=0, columnspan=2)
 
 
+def update_task_section(parent):
+    update_task_frame = tk.Frame(parent)
+    update_task_frame.pack()
+
+    update_task_title = tk.Label(update_task_frame, text='Update task')
+    update_task_title.grid(row=0, column=0, columnspan=2)
+
+    update_task_id_label = tk.Label(update_task_frame, text='Id of the task to update:')
+    update_task_id_label.grid(row=1, column=0)
+
+    update_task_id_entry = tk.Entry(update_task_frame)
+    update_task_id_entry.grid(row=1, column=1)
+
+    update_task_name_label = tk.Label(update_task_frame, text='Updated task name:')
+    update_task_name_label.grid(row=2, column=0)
+
+    update_task_name_entry = tk.Entry(update_task_frame)
+    update_task_name_entry.grid(row=2, column=1)
+
+    update_task_btn = tk.Button(
+        update_task_frame,
+        text='Update task',
+        command=lambda: update_task(update_task_id_entry, update_task_name_entry)
+    )
+    update_task_btn.grid(row=3, column=0, columnspan=2)
+
+
 window = tk.Tk()
 window.title('TODO')
 
@@ -89,27 +116,7 @@ tasks_treeview.pack()
 populate_tasks_treeview()
 
 create_task_section(window)
-
-update_task_frame = tk.Frame()
-update_task_frame.pack()
-
-update_task_title = tk.Label(update_task_frame, text='Update task')
-update_task_title.grid(row=0, column=0, columnspan=2)
-
-update_task_id_label = tk.Label(update_task_frame, text='Id of the task to update:')
-update_task_id_label.grid(row=1, column=0)
-
-update_task_id_entry = tk.Entry(update_task_frame)
-update_task_id_entry.grid(row=1, column=1)
-
-update_task_name_label = tk.Label(update_task_frame, text='Updated task name:')
-update_task_name_label.grid(row=2, column=0)
-
-update_task_name_entry = tk.Entry(update_task_frame)
-update_task_name_entry.grid(row=2, column=1)
-
-update_task_btn = tk.Button(update_task_frame, text='Update task', command=update_task)
-update_task_btn.grid(row=3, column=0, columnspan=2)
+update_task_section(window)
 
 delete_task_frame = tk.Frame()
 delete_task_frame.pack()
