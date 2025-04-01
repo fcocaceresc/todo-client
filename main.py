@@ -10,110 +10,182 @@ API_HOST = os.getenv('API_HOST')
 API_PORT = os.getenv('API_PORT')
 
 
-def get_tasks():
-    url = f'http://{API_HOST}:{API_PORT}/todos'
-    response = requests.get(url).json()
-    return response['tasks']
+class TodoApp(tk.Tk):
+
+    def __init__(self, api_host, api_port):
+        super().__init__()
+        self.title('TODO App')
+
+        self.api = TodoAPI(api_host, api_port)
+
+        self.tasks_frame = TasksFrame(self, self.api)
+        self.tasks_frame.pack()
+
+        self.create_task_frame = CreateTaskFrame(
+            self,
+            self.api,
+            on_task_created=self.tasks_frame.refresh_tasks
+        )
+        self.create_task_frame.pack()
+
+        self.update_task_frame = UpdateTaskFrame(
+            self,
+            self.api,
+            on_task_updated=self.tasks_frame.refresh_tasks
+        )
+        self.update_task_frame.pack()
+
+        self.delete_task_frame = DeleteTaskFrame(
+            self,
+            self.api,
+            on_task_deleted=self.tasks_frame.refresh_tasks
+        )
+        self.delete_task_frame.pack()
 
 
-def create_task():
-    task_name = new_task_name_entry.get()
-    new_task_name_entry.delete(0, tk.END)
-    url = f'http://{API_HOST}:{API_PORT}/todos'
-    task = {'name': task_name}
-    response = requests.post(url, json=task)
-    populate_tasks_treeview()
+class TodoAPI:
 
-def update_task():
-    task_id = int(update_task_id_entry.get())
-    new_task_name = update_task_name_entry.get()
-    update_task_id_entry.delete(0, tk.END)
-    update_task_name_entry.delete(0, tk.END)
-    url = f'http://{API_HOST}:{API_PORT}/todos/{task_id}'
-    task_data = {'name': new_task_name}
-    response = requests.put(url, json=task_data)
-    populate_tasks_treeview()
+    def __init__(self, api_host, api_port):
+        self.base_url = f'http://{api_host}:{api_port}/todos'
 
-def delete_task():
-    task_id = int(delete_task_id_entry.get())
-    delete_task_id_entry.delete(0, tk.END)
-    url = f'http://{API_HOST}:{API_PORT}/todos/{task_id}'
-    response = requests.delete(url)
-    populate_tasks_treeview()
+    def get_tasks(self):
+        response = requests.get(self.base_url).json()
+        return response['tasks']
+
+    def create_task(self, task_name):
+        task = {'name': task_name}
+        response = requests.post(self.base_url, json=task)
+
+    def update_task(self, task_id, task_name):
+        url = f'{self.base_url}/{task_id}'
+        task_data = {'name': task_name}
+        response = requests.put(url, json=task_data)
+
+    def delete_task(self, task_id):
+        url = f'{self.base_url}/{task_id}'
+        response = requests.delete(url)
 
 
-def populate_tasks_treeview():
-    tasks = get_tasks()
-    for row in tasks_treeview.get_children():
-        tasks_treeview.delete(row)
+class TasksFrame(tk.Frame):
 
-    for task in tasks:
-        task_id = task['id']
-        task_name = task['name']
-        tasks_treeview.insert('', tk.END, values=(task_id, task_name))
+    def __init__(self, parent, api):
+        super().__init__(parent)
+
+        self.tasks_title = tk.Label(self, text='Tasks')
+        self.tasks_title.grid(row=0, column=0)
+
+        self.tasks_treeview = ttk.Treeview(self, columns=('id', 'task'), show='headings')
+        self.tasks_treeview.heading('id', text='id')
+        self.tasks_treeview.heading('task', text='task')
+        self.tasks_treeview.grid(row=1, column=0)
+
+        self.api = api
+
+        self.refresh_tasks()
+
+    def refresh_tasks(self):
+        tasks = self.api.get_tasks()
+
+        for row in self.tasks_treeview.get_children():
+            self.tasks_treeview.delete(row)
+
+        for task in tasks:
+            task_id = task['id']
+            task_name = task['name']
+            self.tasks_treeview.insert('', tk.END, values=(task_id, task_name))
 
 
-window = tk.Tk()
-window.title('TODO')
+class CreateTaskFrame(tk.Frame):
 
-tasks_label = tk.Label(window, text='Tasks')
-tasks_label.pack()
+    def __init__(self, parent, api, on_task_created):
+        super().__init__(parent)
 
-tasks_treeview = ttk.Treeview(window, columns=('id', 'task'), show='headings')
-tasks_treeview.heading('id', text='id')
-tasks_treeview.heading('task', text='task')
-tasks_treeview.pack()
-populate_tasks_treeview()
+        self.api = api
 
-create_task_frame = tk.Frame()
-create_task_frame.pack()
+        self.on_task_created = on_task_created
 
-create_task_title = tk.Label(create_task_frame, text='Create task')
-create_task_title.grid(row=0, column=0, columnspan=2)
+        self.create_task_title = tk.Label(self, text='Create task')
+        self.create_task_title.grid(row=0, column=0, columnspan=2)
 
-new_task_name_label = tk.Label(create_task_frame, text='New task name:')
-new_task_name_label.grid(row=1, column=0)
+        self.create_task_name_label = tk.Label(self, text='New task name:')
+        self.create_task_name_label.grid(row=1, column=0)
 
-new_task_name_entry = tk.Entry(create_task_frame)
-new_task_name_entry.grid(row=1, column=1)
+        self.create_task_name_entry = tk.Entry(self)
+        self.create_task_name_entry.grid(row=1, column=1)
 
-create_task_btn = tk.Button(create_task_frame, text='Create task', command=create_task)
-create_task_btn.grid(row=2, column=0, columnspan=2)
+        self.create_task_btn = tk.Button(self, text='Create task', command=self.create_task)
+        self.create_task_btn.grid(row=2, column=0, columnspan=2)
 
-update_task_frame = tk.Frame()
-update_task_frame.pack()
+    def create_task(self):
+        task_name = self.create_task_name_entry.get()
+        self.create_task_name_entry.delete(0, tk.END)
+        self.api.create_task(task_name)
+        self.on_task_created()
 
-update_task_title = tk.Label(update_task_frame, text='Update task')
-update_task_title.grid(row=0, column=0, columnspan=2)
 
-update_task_id_label = tk.Label(update_task_frame, text='Id of the task to update:')
-update_task_id_label.grid(row=1, column=0)
+class UpdateTaskFrame(tk.Frame):
 
-update_task_id_entry = tk.Entry(update_task_frame)
-update_task_id_entry.grid(row=1, column=1)
+    def __init__(self, parent, api, on_task_updated):
+        super().__init__(parent)
 
-update_task_name_label = tk.Label(update_task_frame, text='Updated task name:')
-update_task_name_label.grid(row=2, column=0)
+        self.api = api
 
-update_task_name_entry = tk.Entry(update_task_frame)
-update_task_name_entry.grid(row=2, column=1)
+        self.on_task_updated = on_task_updated
 
-update_task_btn = tk.Button(update_task_frame, text='Update task', command=update_task)
-update_task_btn.grid(row=3, column=0, columnspan=2)
+        self.update_task_title = tk.Label(self, text='Update task')
+        self.update_task_title.grid(row=0, column=0, columnspan=2)
 
-delete_task_frame = tk.Frame()
-delete_task_frame.pack()
+        self.update_task_id_label = tk.Label(self, text='Id of the task to update:')
+        self.update_task_id_label.grid(row=1, column=0)
 
-delete_task_title = tk.Label(delete_task_frame, text='Delete task')
-delete_task_title.grid(row=0, column=0, columnspan=2)
+        self.update_task_id_entry = tk.Entry(self)
+        self.update_task_id_entry.grid(row=1, column=1)
 
-delete_task_id_label = tk.Label(delete_task_frame, text='Id of the task to delete')
-delete_task_id_label.grid(row=1, column=0)
+        self.update_task_name_label = tk.Label(self, text='Updated task name:')
+        self.update_task_name_label.grid(row=2, column=0)
 
-delete_task_id_entry = tk.Entry(delete_task_frame)
-delete_task_id_entry.grid(row=1, column=1)
+        self.update_task_name_entry = tk.Entry(self)
+        self.update_task_name_entry.grid(row=2, column=1)
 
-delete_task_btn = tk.Button(delete_task_frame, text='Delete task', command=delete_task)
-delete_task_btn.grid(row=2, column=0, columnspan=2)
+        self.update_task_btn = tk.Button(self, text='Update task', command=self.update_task)
+        self.update_task_btn.grid(row=3, column=0, columnspan=2)
 
-window.mainloop()
+    def update_task(self):
+        task_id = int(self.update_task_id_entry.get())
+        task_name = self.update_task_name_entry.get()
+        self.update_task_id_entry.delete(0, tk.END)
+        self.update_task_name_entry.delete(0, tk.END)
+        self.api.update_task(task_id, task_name)
+        self.on_task_updated()
+
+
+class DeleteTaskFrame(tk.Frame):
+
+    def __init__(self, parent, api, on_task_deleted):
+        super().__init__(parent)
+
+        self.api = api
+
+        self.on_task_deleted = on_task_deleted
+
+        self.delete_task_title = tk.Label(self, text='Delete task')
+        self.delete_task_title.grid(row=0, column=0, columnspan=2)
+
+        self.delete_task_id_label = tk.Label(self, text='Id of the task to delete')
+        self.delete_task_id_label.grid(row=1, column=0)
+
+        self.delete_task_id_entry = tk.Entry(self)
+        self.delete_task_id_entry.grid(row=1, column=1)
+
+        self.delete_task_btn = tk.Button(self, text='Delete task', command=self.delete_task)
+        self.delete_task_btn.grid(row=2, column=0, columnspan=2)
+
+    def delete_task(self):
+        task_id = int(self.delete_task_id_entry.get())
+        self.delete_task_id_entry.delete(0, tk.END)
+        self.api.delete_task(task_id)
+        self.on_task_deleted()
+
+
+app = TodoApp(API_HOST, API_PORT)
+app.mainloop()
