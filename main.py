@@ -21,6 +21,13 @@ class TodoApp(tk.Tk):
         self.tasks_frame = TasksFrame(self, self.api)
         self.tasks_frame.pack()
 
+        self.create_task_frame = CreateTaskFrame(
+            self,
+            self.api,
+            on_task_created=self.tasks_frame.refresh_tasks
+        )
+        self.create_task_frame.pack()
+
 
 class TodoAPI:
 
@@ -30,6 +37,10 @@ class TodoAPI:
     def get_tasks(self):
         response = requests.get(self.base_url).json()
         return response['tasks']
+
+    def create_task(self, task_name):
+        task = {'name': task_name}
+        response = requests.post(self.base_url, json=task)
 
 
 class TasksFrame(tk.Frame):
@@ -59,6 +70,34 @@ class TasksFrame(tk.Frame):
             task_id = task['id']
             task_name = task['name']
             self.tasks_treeview.insert('', tk.END, values=(task_id, task_name))
+
+
+class CreateTaskFrame(tk.Frame):
+
+    def __init__(self, parent, api, on_task_created):
+        super().__init__(parent)
+
+        self.api = api
+
+        self.on_task_created = on_task_created
+
+        self.create_task_title = tk.Label(self, text='Create task')
+        self.create_task_title.grid(row=0, column=0, columnspan=2)
+
+        self.create_task_name_label = tk.Label(self, text='New task name:')
+        self.create_task_name_label.grid(row=1, column=0)
+
+        self.create_task_name_entry = tk.Entry(self)
+        self.create_task_name_entry.grid(row=1, column=1)
+
+        self.create_task_btn = tk.Button(self, text='Create task', command=self.create_task)
+        self.create_task_btn.grid(row=2, column=0, columnspan=2)
+
+    def create_task(self):
+        task_name = self.create_task_name_entry.get()
+        self.create_task_name_entry.delete(0, tk.END)
+        self.api.create_task(task_name)
+        self.on_task_created()
 
 
 app = TodoApp(API_HOST, API_PORT)
