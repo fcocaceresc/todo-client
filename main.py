@@ -28,6 +28,13 @@ class TodoApp(tk.Tk):
         )
         self.create_task_frame.pack()
 
+        self.update_task_frame = UpdateTaskFrame(
+            self,
+            self.api,
+            on_task_updated=self.tasks_frame.refresh_tasks
+        )
+        self.update_task_frame.pack()
+
 
 class TodoAPI:
 
@@ -41,6 +48,11 @@ class TodoAPI:
     def create_task(self, task_name):
         task = {'name': task_name}
         response = requests.post(self.base_url, json=task)
+
+    def update_task(self, task_id, task_name):
+        url = f'{self.base_url}/{task_id}'
+        task_data = {'name': task_name}
+        response = requests.put(url, json=task_data)
 
 
 class TasksFrame(tk.Frame):
@@ -98,6 +110,42 @@ class CreateTaskFrame(tk.Frame):
         self.create_task_name_entry.delete(0, tk.END)
         self.api.create_task(task_name)
         self.on_task_created()
+
+
+class UpdateTaskFrame(tk.Frame):
+
+    def __init__(self, parent, api, on_task_updated):
+        super().__init__(parent)
+
+        self.api = api
+
+        self.on_task_updated = on_task_updated
+
+        self.update_task_title = tk.Label(self, text='Update task')
+        self.update_task_title.grid(row=0, column=0, columnspan=2)
+
+        self.update_task_id_label = tk.Label(self, text='Id of the task to update:')
+        self.update_task_id_label.grid(row=1, column=0)
+
+        self.update_task_id_entry = tk.Entry(self)
+        self.update_task_id_entry.grid(row=1, column=1)
+
+        self.update_task_name_label = tk.Label(self, text='Updated task name:')
+        self.update_task_name_label.grid(row=2, column=0)
+
+        self.update_task_name_entry = tk.Entry(self)
+        self.update_task_name_entry.grid(row=2, column=1)
+
+        self.update_task_btn = tk.Button(self, text='Update task', command=self.update_task)
+        self.update_task_btn.grid(row=3, column=0, columnspan=2)
+
+    def update_task(self):
+        task_id = int(self.update_task_id_entry.get())
+        task_name = self.update_task_name_entry.get()
+        self.update_task_id_entry.delete(0, tk.END)
+        self.update_task_name_entry.delete(0, tk.END)
+        self.api.update_task(task_id, task_name)
+        self.on_task_updated()
 
 
 app = TodoApp(API_HOST, API_PORT)
