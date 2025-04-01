@@ -10,6 +10,61 @@ API_HOST = os.getenv('API_HOST')
 API_PORT = os.getenv('API_PORT')
 
 
+class TodoApp(tk.Tk):
+
+    def __init__(self, api_host, api_port):
+        super().__init__()
+        self.title('TODO App')
+
+        self.api = TodoAPI(api_host, api_port)
+
+        self.tasks_frame = TasksFrame(self, self.api)
+        self.tasks_frame.pack()
+
+
+class TodoAPI:
+
+    def __init__(self, api_host, api_port):
+        self.base_url = f'http://{api_host}:{api_port}/todos'
+
+    def get_tasks(self):
+        response = requests.get(self.base_url).json()
+        return response['tasks']
+
+
+class TasksFrame(tk.Frame):
+
+    def __init__(self, parent, api):
+        super().__init__(parent)
+
+        self.tasks_title = tk.Label(self, text='Tasks')
+        self.tasks_title.grid(row=0, column=0)
+
+        self.tasks_treeview = ttk.Treeview(self, columns=('id', 'task'), show='headings')
+        self.tasks_treeview.heading('id', text='id')
+        self.tasks_treeview.heading('task', text='task')
+        self.tasks_treeview.grid(row=1, column=0)
+
+        self.api = api
+
+        self.refresh_tasks()
+
+    def refresh_tasks(self):
+        tasks = self.api.get_tasks()
+
+        for row in self.tasks_treeview.get_children():
+            self.tasks_treeview.delete(row)
+
+        for task in tasks:
+            task_id = task['id']
+            task_name = task['name']
+            self.tasks_treeview.insert('', tk.END, values=(task_id, task_name))
+
+
+app = TodoApp(API_HOST, API_PORT)
+app.mainloop()
+
+"""
 def get_tasks():
     url = f'http://{API_HOST}:{API_PORT}/todos'
     response = requests.get(url).json()
@@ -141,3 +196,4 @@ update_task_section(window)
 delete_task_section(window)
 
 window.mainloop()
+"""
