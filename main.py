@@ -24,17 +24,26 @@ class TodoApp(tk.Tk):
         for widget in self.winfo_children():
             widget.pack_forget()
 
+    def on_login(self, username, password):
+        self.api.login(username, password)
+        self.show_dashboard()
+
+    def on_signup(self, username, password):
+        self.api.signup(username, password)
+        self.show_login()
+
     def show_login(self):
         self.clear_window()
-        self.login_frame = LoginFrame(self, show_signup=self.show_signup)
+        self.login_frame = LoginFrame(self, show_signup=self.show_signup, on_login=self.on_login)
         self.login_frame.pack()
 
     def show_signup(self):
         self.clear_window()
-        self.signup_frame = SignupFrame(self, show_login=self.show_login)
+        self.signup_frame = SignupFrame(self, show_login=self.show_login, on_signup=self.on_signup)
         self.signup_frame.pack()
 
     def show_dashboard(self):
+        self.clear_window()
         self.tasks_frame = TasksFrame(self, self.api)
         self.tasks_frame.pack()
 
@@ -63,32 +72,69 @@ class TodoApp(tk.Tk):
 class TodoAPI:
 
     def __init__(self, api_host, api_port):
-        self.base_url = f'http://{api_host}:{api_port}/todos'
+        self.token = None
+        self.headers = {'Content-Type': 'application/json'}
+        self.base_url = f'http://{api_host}:{api_port}'
+
+    def login(self, username, password):
+        user_data = {
+            'username': username,
+            'password': password
+        }
+        response = requests.post(f'{self.base_url}/login', json=user_data)
+        if response.status_code == 200:
+            self.token = response.json()['token']
+            self.generate_headers()
+
+    def signup(self, username, password):
+        user_data = {
+            'username': username,
+            'password': password
+        }
+        response = requests.post(f'{self.base_url}/register', json=user_data)
+
+    def generate_headers(self):
+        self.headers['Authorization'] = f'Bearer {self.token}'
 
     def get_tasks(self):
-        response = requests.get(self.base_url).json()
+        response = requests.get(
+            f'{self.base_url}/todos',
+            headers=self.headers
+        ).json()
         return response['tasks']
 
     def create_task(self, task_name):
         task = {'name': task_name}
-        response = requests.post(self.base_url, json=task)
+        response = requests.post(
+            f"{self.base_url}/todos",
+            headers=self.headers,
+            json=task
+        )
 
     def update_task(self, task_id, task_name):
-        url = f'{self.base_url}/{task_id}'
         task_data = {'name': task_name}
-        response = requests.put(url, json=task_data)
+        response = requests.put(
+            f"{self.base_url}/todos/{task_id}",
+            headers=self.headers,
+            json=task_data
+        )
 
     def delete_task(self, task_id):
         url = f'{self.base_url}/{task_id}'
-        response = requests.delete(url)
+        response = requests.delete(
+            f"{self.base_url}/todos/{task_id}",
+            headers=self.headers
+        )
 
 
 class LoginFrame(tk.Frame):
 
-    def __init__(self, parent, show_signup):
+    def __init__(self, parent, show_signup, on_login):
         super().__init__(parent)
 
         self.show_signup = show_signup
+
+        self.on_login = on_login
 
         self.login_title = tk.Label(self, text='Login')
         self.login_title.grid(row=0, column=0, columnspan=2)
@@ -102,22 +148,29 @@ class LoginFrame(tk.Frame):
         self.password_label = tk.Label(self, text='Password')
         self.password_label.grid(row=2, column=0)
 
-        self.password_entry = tk.Entry(self)
+        self.password_entry = tk.Entry(self, show="*")
         self.password_entry.grid(row=2, column=1)
 
-        self.submit_btn = tk.Button(self, text='Submit')
+        self.submit_btn = tk.Button(self, text='Submit', command=self.login)
         self.submit_btn.grid(row=3, column=0, columnspan=2)
 
         self.signup_btn = tk.Button(self, text="Don't have an account? Sign up", command=self.show_signup)
         self.signup_btn.grid(row=4, column=0, columnspan=2)
 
+    def login(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+        self.on_login(username, password)
+
 
 class SignupFrame(tk.Frame):
 
-    def __init__(self, parent, show_login):
+    def __init__(self, parent, show_login, on_signup):
         super().__init__(parent)
 
         self.show_login = show_login
+
+        self.on_signup = on_signup
 
         self.signup_title = tk.Label(self, text='Sign up')
         self.signup_title.grid(row=0, column=0, columnspan=2)
@@ -131,14 +184,19 @@ class SignupFrame(tk.Frame):
         self.password_label = tk.Label(self, text='Password')
         self.password_label.grid(row=2, column=0)
 
-        self.password_entry = tk.Entry(self)
+        self.password_entry = tk.Entry(self, show="*")
         self.password_entry.grid(row=2, column=1)
 
-        self.submit_btn = tk.Button(self, text='Submit')
+        self.submit_btn = tk.Button(self, text='Submit', command=self.signup)
         self.submit_btn.grid(row=3, column=0, columnspan=2)
 
         self.signup_btn = tk.Button(self, text="Already have an account? Log in", command=self.show_login)
         self.signup_btn.grid(row=4, column=0, columnspan=2)
+
+    def signup(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+        self.on_signup(username, password)
 
 
 class TasksFrame(tk.Frame):
