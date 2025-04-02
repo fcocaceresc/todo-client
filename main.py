@@ -1,6 +1,6 @@
 import os
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 import requests
 from dotenv import load_dotenv
@@ -25,12 +25,20 @@ class TodoApp(tk.Tk):
             widget.pack_forget()
 
     def on_login(self, username, password):
-        self.api.login(username, password)
-        self.show_dashboard()
+        response = self.api.login(username, password)
+        if response.status_code == 200:
+            messagebox.showinfo('Success', 'Logged in successfully')
+            self.show_dashboard()
+        else:
+            messagebox.showerror('Error', 'Login failed')
 
     def on_signup(self, username, password):
-        self.api.signup(username, password)
-        self.show_login()
+        response = self.api.signup(username, password)
+        if response.status_code == 201:
+            messagebox.showinfo('Success', 'Signed up successfully')
+            self.show_login()
+        else:
+            messagebox.showerror('Error', 'Sign up failed')
 
     def show_login(self):
         self.clear_window()
@@ -85,6 +93,7 @@ class TodoAPI:
         if response.status_code == 200:
             self.token = response.json()['token']
             self.generate_headers()
+        return response
 
     def signup(self, username, password):
         user_data = {
@@ -92,6 +101,7 @@ class TodoAPI:
             'password': password
         }
         response = requests.post(f'{self.base_url}/register', json=user_data)
+        return response
 
     def generate_headers(self):
         self.headers['Authorization'] = f'Bearer {self.token}'
@@ -110,6 +120,7 @@ class TodoAPI:
             headers=self.headers,
             json=task
         )
+        return response
 
     def update_task(self, task_id, task_name):
         task_data = {'name': task_name}
@@ -118,6 +129,7 @@ class TodoAPI:
             headers=self.headers,
             json=task_data
         )
+        return response
 
     def delete_task(self, task_id):
         url = f'{self.base_url}/{task_id}'
@@ -125,6 +137,7 @@ class TodoAPI:
             f"{self.base_url}/todos/{task_id}",
             headers=self.headers
         )
+        return response
 
 
 class LoginFrame(tk.Frame):
@@ -252,8 +265,12 @@ class CreateTaskFrame(tk.Frame):
     def create_task(self):
         task_name = self.create_task_name_entry.get()
         self.create_task_name_entry.delete(0, tk.END)
-        self.api.create_task(task_name)
-        self.on_task_created()
+        response = self.api.create_task(task_name)
+        if response.status_code == 201:
+            messagebox.showinfo('Success', 'Task created successfully')
+            self.on_task_created()
+        else:
+            messagebox.showerror('Error', 'Failed to create task')
 
 
 class UpdateTaskFrame(tk.Frame):
@@ -288,8 +305,12 @@ class UpdateTaskFrame(tk.Frame):
         task_name = self.update_task_name_entry.get()
         self.update_task_id_entry.delete(0, tk.END)
         self.update_task_name_entry.delete(0, tk.END)
-        self.api.update_task(task_id, task_name)
-        self.on_task_updated()
+        response = self.api.update_task(task_id, task_name)
+        if response.status_code == 200:
+            messagebox.showinfo('Success', 'Task updated successfully')
+            self.on_task_updated()
+        else:
+            messagebox.showerror('Error', 'Failed to update task')
 
 
 class DeleteTaskFrame(tk.Frame):
@@ -316,8 +337,12 @@ class DeleteTaskFrame(tk.Frame):
     def delete_task(self):
         task_id = int(self.delete_task_id_entry.get())
         self.delete_task_id_entry.delete(0, tk.END)
-        self.api.delete_task(task_id)
-        self.on_task_deleted()
+        response = self.api.delete_task(task_id)
+        if response.status_code == 200:
+            messagebox.showinfo('Success', 'Task deleted successfully')
+            self.on_task_deleted()
+        else:
+            messagebox.showerror('Error', 'Failed to delete task')
 
 
 app = TodoApp(API_HOST, API_PORT)
