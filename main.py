@@ -18,6 +18,13 @@ class TodoApp(tk.Tk):
 
         self.api = TodoAPI(api_host, api_port)
 
+        self.show_login()
+
+    def show_login(self):
+        self.login_frame = LoginFrame(self)
+        self.login_frame.pack()
+
+    def show_dashboard(self):
         self.tasks_frame = TasksFrame(self, self.api)
         self.tasks_frame.pack()
 
@@ -64,6 +71,33 @@ class TodoAPI:
     def delete_task(self, task_id):
         url = f'{self.base_url}/{task_id}'
         response = requests.delete(url)
+
+
+class LoginFrame(tk.Frame):
+
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.login_title = tk.Label(self, text='Login')
+        self.login_title.grid(row=0, column=0, columnspan=2)
+
+        self.username_label = tk.Label(self, text='Username')
+        self.username_label.grid(row=1, column=0)
+
+        self.username_entry = tk.Entry(self)
+        self.username_entry.grid(row=1, column=1)
+
+        self.password_label = tk.Label(self, text='Password')
+        self.password_label.grid(row=2, column=0)
+
+        self.password_entry = tk.Entry(self)
+        self.password_entry.grid(row=2, column=1)
+
+        self.submit_btn = tk.Button(self, text='Submit')
+        self.submit_btn.grid(row=3, column=0, columnspan=2)
+
+        self.signup_btn = tk.Button(self, text="Don't have an account? Sign up")
+        self.signup_btn.grid(row=4, column=0, columnspan=2)
 
 
 class TasksFrame(tk.Frame):
