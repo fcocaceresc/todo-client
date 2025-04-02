@@ -24,6 +24,10 @@ class TodoApp(tk.Tk):
         self.login_frame = LoginFrame(self)
         self.login_frame.pack()
 
+    def show_signup(self):
+        self.signup_frame = SignupFrame(self)
+        self.signup_frame.pack()
+
     def show_dashboard(self):
         self.tasks_frame = TasksFrame(self, self.api)
         self.tasks_frame.pack()
@@ -97,6 +101,33 @@ class LoginFrame(tk.Frame):
         self.submit_btn.grid(row=3, column=0, columnspan=2)
 
         self.signup_btn = tk.Button(self, text="Don't have an account? Sign up")
+        self.signup_btn.grid(row=4, column=0, columnspan=2)
+
+
+class SignupFrame(tk.Frame):
+
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.signup_title = tk.Label(self, text='Sign up')
+        self.signup_title.grid(row=0, column=0, columnspan=2)
+
+        self.username_label = tk.Label(self, text='Username')
+        self.username_label.grid(row=1, column=0)
+
+        self.username_entry = tk.Entry(self)
+        self.username_entry.grid(row=1, column=1)
+
+        self.password_label = tk.Label(self, text='Password')
+        self.password_label.grid(row=2, column=0)
+
+        self.password_entry = tk.Entry(self)
+        self.password_entry.grid(row=2, column=1)
+
+        self.submit_btn = tk.Button(self, text='Submit')
+        self.submit_btn.grid(row=3, column=0, columnspan=2)
+
+        self.signup_btn = tk.Button(self, text="Already have an account? Log in")
         self.signup_btn.grid(row=4, column=0, columnspan=2)
 
 
