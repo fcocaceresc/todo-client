@@ -20,12 +20,18 @@ class TodoApp(tk.Tk):
 
         self.show_login()
 
+    def clear_window(self):
+        for widget in self.winfo_children():
+            widget.pack_forget()
+
     def show_login(self):
-        self.login_frame = LoginFrame(self)
+        self.clear_window()
+        self.login_frame = LoginFrame(self, show_signup=self.show_signup)
         self.login_frame.pack()
 
     def show_signup(self):
-        self.signup_frame = SignupFrame(self)
+        self.clear_window()
+        self.signup_frame = SignupFrame(self, show_login=self.show_login)
         self.signup_frame.pack()
 
     def show_dashboard(self):
@@ -79,8 +85,10 @@ class TodoAPI:
 
 class LoginFrame(tk.Frame):
 
-    def __init__(self, parent):
+    def __init__(self, parent, show_signup):
         super().__init__(parent)
+
+        self.show_signup = show_signup
 
         self.login_title = tk.Label(self, text='Login')
         self.login_title.grid(row=0, column=0, columnspan=2)
@@ -100,14 +108,16 @@ class LoginFrame(tk.Frame):
         self.submit_btn = tk.Button(self, text='Submit')
         self.submit_btn.grid(row=3, column=0, columnspan=2)
 
-        self.signup_btn = tk.Button(self, text="Don't have an account? Sign up")
+        self.signup_btn = tk.Button(self, text="Don't have an account? Sign up", command=self.show_signup)
         self.signup_btn.grid(row=4, column=0, columnspan=2)
 
 
 class SignupFrame(tk.Frame):
 
-    def __init__(self, parent):
+    def __init__(self, parent, show_login):
         super().__init__(parent)
+
+        self.show_login = show_login
 
         self.signup_title = tk.Label(self, text='Sign up')
         self.signup_title.grid(row=0, column=0, columnspan=2)
@@ -127,7 +137,7 @@ class SignupFrame(tk.Frame):
         self.submit_btn = tk.Button(self, text='Submit')
         self.submit_btn.grid(row=3, column=0, columnspan=2)
 
-        self.signup_btn = tk.Button(self, text="Already have an account? Log in")
+        self.signup_btn = tk.Button(self, text="Already have an account? Log in", command=self.show_login)
         self.signup_btn.grid(row=4, column=0, columnspan=2)
 
 
